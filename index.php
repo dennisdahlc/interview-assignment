@@ -11,7 +11,7 @@ class EventHandler
     {
         MySQLHelper::createConnectionToDatabase();
         
-        self::initializeSetup();
+        //self::initializeSetup();
         
         $result = MySQLHelper::performSelectOperation();
         
@@ -21,7 +21,7 @@ class EventHandler
         
         $isResultAddedToFile = FileHelper::ensureStringIsPresentInFile($result);
         
-        MYSQLHelper::removeResultFromDatabaes($isResultAddedToFile);
+        MYSQLHelper::performDeleteOperation($isResultAddedToFile);
         
         MYSQLHelper::closeConnection();
     }
@@ -59,6 +59,7 @@ class MySQLHelper
     private static $SQLForWipingTable = "DELETE FROM users";
     
     private static $SQLForSelection = "SELECT id, firstname, lastname, email FROM users where EXPRESSION";
+    private static $SQLForDeletion = "DELETE FROM users where EXPRESSION";
     private static $SQLColumnNames = array("id", "firstname", "lastname", "email");
     private static $SQLOperators = array("= 'VALUE'", "<> 'VALUE'", " LIKE '%VALUE%'", " NOT LIKE '%VALUE%'");
     
@@ -93,7 +94,7 @@ class MySQLHelper
     
     public static function performSelectOperation()
     {
-        $SQL = self::constructSQLForSelect();
+        $SQL = self::constructSQL(self::$SQLForSelection);
         $result = self::executeSQL($SQL, "Failed to perform select");
         
         $stringResult = null;
@@ -110,11 +111,13 @@ class MySQLHelper
         return $stringResult;
     }
     
-    public static function removeResultFromDatabaes($isResultAddedToFile)
+    public static function performDeleteOperation($isResultAddedToFile)
     {
         if($isResultAddedToFile)
         {
+            $sqlForRemoval = self::constructSQL(self::$SQLForDeletion);
             
+            self::executeSQL($sqlForRemoval, "Failed to perform remove");
         }
     }
     
@@ -123,17 +126,24 @@ class MySQLHelper
         self::$conn->close();
     }    
     
-    private static function constructSQLForSelect()
+    private static function constructSQL($SQLOperation)
+    {
+        $expression = self::constructExpression();
+        
+        $SQL = str_replace("EXPRESSION", $expression, $SQLOperation);
+        
+        return $SQL;
+    }
+    
+    private static function constructExpression()
     {
         $columnName = self::$SQLColumnNames[2];
         $operator = self::$SQLOperators[2];
-        $value = "ey";
+        $value = "morrow";
         
         $expression = $columnName . str_replace("VALUE", $value, $operator);
-        
-        $SQL = str_replace("EXPRESSION", $expression, self::$SQLForSelection);
-        
-        return $SQL;
+
+        return $expression;        
     }
     
     private static function executeSQL($SQL, $errorMessage)
@@ -200,7 +210,7 @@ class FileHelper
             $hasAllLinesInStringBeenIdentifiedInLogFile = self::areAllLinesInStringPresentInFile($string, $logFile);
         }
 
-        return $hasAllLinesInStringBeenIdentifiedInLogFile;;
+        return $hasAllLinesInStringBeenIdentifiedInLogFile;
     }
     
     public static function deleteLogFile()
