@@ -1,16 +1,35 @@
 <?php
 
+class ConstantHelper
+{
+    public static $HTMLLineBreak = "<br>"  . PHP_EOL;
+}
+
 class EventHandler 
 {
     public static function handleEvent()
     {
         MySQLHelper::createConnectionToDatabase();
         
-        MySQLHelper::initializeDatabase();
+        self::initializeSetup();
         
-        MySQLHelper::performSelectOperation();
+        $result = MySQLHelper::performSelectOperation();
+        
+        FileHelper::addStringToFile($result);
+        
+        echo $result;
+        
+        $isResultAddedToFile = FileHelper::ensureStringIsPresentInFile($result);
+        
+        MYSQLHelper::removeResultFromDatabaes($isResultAddedToFile);
         
         MYSQLHelper::closeConnection();
+    }
+    
+    public static function initializeSetup()
+    {
+        MySQLHelper::initializeDatabase();
+        FileHelper::deleteLogFile();        
     }
 }
 
@@ -76,14 +95,27 @@ class MySQLHelper
     {
         $SQL = self::constructSQLForSelect();
         $result = self::executeSQL($SQL, "Failed to perform select");
-
+        
+        $stringResult = null;
+        
         if ($result->num_rows > 0)
         {
+            $stringResult = "Select operation performed at " . date(DATE_RFC2822) . " : " . $SQL . ConstantHelper::$HTMLLineBreak . "Result:" . ConstantHelper::$HTMLLineBreak;
             while($row = $result->fetch_assoc()) 
             {
-                echo "id: " . $row["id"] . " - Name: " . $row["firstname"]. " " . $row["lastname"] . " " . $row["email"] . "<br>";
+                $stringResult .= "id: " . $row["id"] . " - Name: " . $row["firstname"]. " " . $row["lastname"] . " " . $row["email"] . ConstantHelper::$HTMLLineBreak;
             }
-        } 
+        }
+        
+        return $stringResult;
+    }
+    
+    public static function removeResultFromDatabaes($isResultAddedToFile)
+    {
+        if($isResultAddedToFile)
+        {
+            
+        }
     }
     
     public static function closeConnection()
@@ -125,6 +157,120 @@ class MySQLHelper
     {
         self::closeConnection();
         die($errorMessage . " with error: " . $error . "<br> SQL: " . $SQL);
+    }
+}
+
+class FileHelper
+{
+    private static $LogFileName = "log.html";
+    
+    public static function addStringToFile($string)
+    {
+        if(!is_null($string))
+        {
+            $logFile = @fopen(self::$LogFileName, "a");
+
+            if($logFile === false)
+            {
+                echo 'Error when opening file ' . self::$LogFileName . '<br>';
+            }
+            else
+            {
+                $string = self::addExtraLineForSpacingIfNeeded($string);
+                
+                self::appendStringToFile($logFile, $string);
+
+                fclose($logFile);
+            }
+        }
+    }
+    
+    public static function ensureStringIsPresentInFile($string)
+    {
+        $hasAllLinesInStringBeenIdentifiedInLogFile = false;
+        
+        $logFile = @fopen(self::$LogFileName, "r");
+        
+        if($logFile === false)
+        {
+            echo 'Error when opening file ' . self::$LogFileName . '<br>';
+        }
+        else
+        {
+            $hasAllLinesInStringBeenIdentifiedInLogFile = self::areAllLinesInStringPresentInFile($string, $logFile);
+        }
+
+        return $hasAllLinesInStringBeenIdentifiedInLogFile;;
+    }
+    
+    public static function deleteLogFile()
+    {
+        unlink(self::$LogFileName);
+    }
+    
+    private static function areAllLinesInStringPresentInFile($string, $logFile)
+    {
+        $hasAllLinesInStringBeenIdentifiedInLogFile = false;
+        
+        $stringLines = explode(PHP_EOL, $string);
+
+        $stringLinesIndex = 0;
+        
+        $isContinousReadOfLines = false;
+        
+        while(!feof($logFile)) 
+        {
+            $lineInFileRaw = fgets($logFile);
+            
+            $lineInFile = str_replace(PHP_EOL, "", $lineInFileRaw);
+            
+            $isLineInFileEqualToLineInString = strcmp($lineInFile, $stringLines[$stringLinesIndex]) === 0;
+
+            if(!$isContinousReadOfLines && $isLineInFileEqualToLineInString)
+            {
+                $isContinousReadOfLines = true;
+            }
+            elseif($isContinousReadOfLines && !$isLineInFileEqualToLineInString)
+            {
+                $isContinousReadOfLines = false;
+            }
+            
+            if($isLineInFileEqualToLineInString)
+            {
+                $stringLinesIndex++;
+            }
+            
+            //when all lines in the string have been read in a continous manner, it is confirmed that the file contain the string
+            if($isContinousReadOfLines && $stringLinesIndex === count($stringLines) - 1)
+            {
+                $hasAllLinesInStringBeenIdentifiedInLogFile = true;
+                break;
+            }
+        }
+        
+        return $hasAllLinesInStringBeenIdentifiedInLogFile;
+    }
+    
+    private static function addExtraLineForSpacingIfNeeded($string)
+    {
+        $fileSize = filesize(self::$LogFileName);
+
+        if($fileSize > 0)
+        {
+            $string = ConstantHelper::$HTMLLineBreak . $string;
+        }
+        
+        return $string;
+    }
+    
+    private static function appendStringToFile($logFile, $string)
+    {
+        $writeStatus = fwrite($logFile, $string);
+
+        if($writeStatus === false)
+        {
+            echo 'Error when writing to file ' . self::$LogFileName . '<br>';
+        }
     }
 }
 
