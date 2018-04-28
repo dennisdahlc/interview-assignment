@@ -1,7 +1,7 @@
 # How to setup to run the assignment
 
-The setup for this code is fairly simple.
-It is written in PHP using MySQL, so a PHP server with MySQL is needed. I have used XAMPP since it contains both.
+The setup for this code is fairly simple.<br>
+It is written in PHP using MySQL, so a PHP server with MySQL is needed. I have used XAMPP since it contains both.<br>
 Ensure that the PHP is setup to allow for file access and that the version is at least 7.1.
 In the top of the MySQLHelper.php variables for location of server, admin user, password and database can be configured.
 
