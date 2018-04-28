@@ -1,15 +1,27 @@
-# Job interview assignment
-We kindly ask you to solve the task below. By solving and submitting this assignment you provide us with insights in how you solve real-world problems. What we will be looking at are topics such as: choice of technology, structuring of code, use of VCS, selection of 3rd party libraries, documentation etc.
+# How to setup to run the assignment
 
-## The task
-Develop a solution that, given a select query, can read data from a database, write it to a local file and then delete the data from the database. The solution should verify that data is written to the file, and that data integrity is maintained, before deleting it from the database.
+The setup for this code is fairly simple.
+It is written in PHP using MySQL, so a PHP server with MySQL is needed. I have used XAMPP since it contains both.
+Ensure that the PHP is setup to allow for file access and that the version is at least 7.1.
+In the top of the MySQLHelper.php variables for location of server, admin user, password and database can be configured.
 
-- Use Bash, PHP, JavaScript or Go as the language
-- Use MySQL, MariaDB, CockroachDB or SQLite as the database
+# Assignment description
 
-Please use the data set provided in the SQL dump in this repo. Please also consider that your solution should be able to handle much larger data sets.
+With the supplied interface it is possible to send any SELECT statement to the server.
+The server will then confirm the correctness of the request and perform the SELECT operation.
+Then the result will be written into a log file, and afterwards is it checked that the result is present in the file.
+If and only then the result is removed from the database, and the result is sent back to the GUI;
 
-## Expectations
-Make a copy of this repo. Solve the task below. Push your code to a public repo, and send us the link as a reply to our email.
+# How to use the GUI
 
-Your solution should include a short readme describing your solution, how to use/test it and any final considerations such as known errors, next steps, security concerns etc. Don’t worry we are not expecting this thing to be perfect.
+Before running any queries, please start by resetting the database by using the assigned button.
+This will created the table if needed be, clear existing data and insert the supplied data, and finally delete any existing log file.
+
+Then the GUI is ready to be used. Use the dropdown boxes to select a query and type in a value, and finally press the Submit button to send the query to the server.
+When a result is received from the server, it will be displayed in the textbox below the controls.
+
+# Final considerations
+
+Currently the error message on the server is provided directly to the client, which of course is not safe. If error messages must be sent to the client, they need to be custom messages without no traces of the code and server structure.
+The way it is checked if the result has been written to the file is not scalable as the file grows larger. A way to fix this would be to insert the newest result at the top of the file, which in turn requires more time spent writing to the file. I opted to not use this solution, since it would require some fairly ugly code and would not result in a better solution anyway.
+This solution is not thead or transaction safe in any regard, so if the database changes during the execution of the code or if more threads are accessing the log file at the same time, concurrency issues will occur. It is out of scope for this assignment to prevent this, but the use of (distributed) locks would be one way to prevent this.

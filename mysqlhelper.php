@@ -4,6 +4,11 @@ require_once 'constanthelper.php';
 
 class MySQLHelper
 {
+    private const servername = "localhost";
+    private const username = "adminUser";
+    private const password = "Test1234";
+    private const databaseName = "test";
+    
     private static $conn = null;
     
     private static $SQLForCreationOfTable = "CREATE TABLE IF NOT EXISTS users (
@@ -34,12 +39,7 @@ class MySQLHelper
     
     public static function createConnectionToDatabase()
     {
-        $servername = "localhost";
-        $username = "adminUser";
-        $password = "Test1234";
-        $databaseName = "test";
-
-        self::$conn = new mysqli($servername, $username, $password, $databaseName);
+        self::$conn = new mysqli(self::servername, self::username, self::password, self::databaseName);
         
         $connectionError = self::$conn->connect_error;
         
